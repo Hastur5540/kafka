@@ -1,0 +1,62 @@
+
+compose部署+生产消费：
+1 docker compose up
+2 新开一个终端docker exec -it docker_compose-kafka-1 bash
+注意！！！kafka在opt文件夹里，进入opt/kafka/bin再输以下命令
+3 ./kafka-topics.sh --bootstrap-server 192.168.64.202:9092 --list
+4 ./kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic test_1
+5 新开一个终端后输入下面命令：
+./kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic test_1
+
+
+常用指令：
+
+换镜像源后跑下面命令：
+systemctl daemon-reload
+systemctl restart docker
+
+进入kafka容器:
+docker exec -it kafka /bin/sh
+或
+docker exec -it kafka bash
+
+开启容器：
+docker container start <NAMES>
+或者
+docker container start <CONTAINER ID> 
+
+停止容器：
+docker container stop <NAMES>
+或者
+docker container stop <CONTAINER ID>
+
+创建Replication为1，Partition为1的topic:
+bin/kafka-topics.sh --create --zookeeper 192.168.64.129:2181 --replication-factor 1 --partitions 1 --topic test_1
+
+查看topic的状态，在kafka容器中的opt/kafka_2.11-2.0.0/目录下输入:
+bin/kafka-topics.sh --describe --zookeeper 192.168.64.129:2181 --topic test_1
+
+发送kafka消息，在kafka容器内，/opt/kafka_2.11-2.0.0/bin目录下执行:
+./kafka-console-producer.sh --broker-list 192.168.64.129:9092 --topic test_1
+
+接收消息：
+kafka-console-consumer.sh --bootstrap-server 192.168.64.129:9092 --topic test_1 --from-beginning
+
+bin/kafka-consumer-groups.sh --new-consumer --bootstrap-server 192.168.64.202:15386  --group notify-group
+
+启动kafka-connect：
+bin/connect-distributed.sh -daemon config/connect-distributed.properties
+
+插件文件夹：
+cd opt/kafka_2.13-2.8.1/plugins/
+
+docker日志：
+docker logs --since 30m 容器id
+
+创建kafka容器及修改环境变量：
+docker run -d --name kafka_1 -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=192.168.64.134:2181 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://192.168.64.134:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -v /etc/localtime:/etc/localtime wurstmeister/kafka
+
+docker volume create connect
+docker run -itd --rm --name connect --volume connect:/kafka/connect -p 8083:8083 -e GROUP_ID=1 -e CONFIG_STORAGE_TOPIC=my_connect_configs -e OFFSET_STORAGE_TOPIC=my_connect_offsets -e STATUS_STORAGE_TOPIC=my_connect_statuses --link zookeeper:zookeeper --link kafka:kafka_1 --link postgres:postgres debezium/connect:latest
+
+

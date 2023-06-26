@@ -1,0 +1,17 @@
+数据库postgresql启动：
+systemctl start postgresql-11
+
+重启服务器：
+sudo systemctl restart postgresql-11
+
+切换身份：
+sudo su - postgres
+
+进入数据库命令模式：
+psql
+
+退出命令模式：
+\q
+
+切换数据库：
+\c databasename
